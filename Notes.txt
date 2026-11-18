@@ -1,0 +1,50 @@
+1- In a Maven test automation project, everything lives under src/test because we are not building a deployable application (which would live in src/main), only a test suite that verifies an external system.
+
+2-
+    - Selenium WebDriver (The Robot Hands): Java by itself has no idea how to click a button in Google Chrome or Firefox. Selenium is a library that gives Java a "remote control" (WebDriver) to open a browser, find HTML elements on a webpage, type text, and click buttons.
+
+    - TestNG (The Referee & Judge): Selenium can click buttons, but Selenium cannot pass or fail a test! It has no concept of "Test Passed" or "Test Failed." TestNG is a testing framework that provides Assertions (Assert.assertEquals(...))—which compare what actually happened on screen to what should have happened—and manages running tests in parallel (multiple browsers at the same time).
+
+    - Cucumber & Gherkin (The Translator): In companies, non-technical people (Product Managers, Business Analysts) want to read what is being tested without reading complex Java code. Gherkin is a plain-English format (Given, When, Then) written inside .feature files. Cucumber is the tool that reads those English sentences and triggers the matching Java method behind the scenes.
+
+    - Jackson (The File Reader): A standard Java library that reads data out of .json files so we don't hardcode usernames and passwords inside our Java code.
+
+    - The Beginner Mistake: Writing driver.findElement(By.id("login-button")).click() inside all 50 test files. If the website developer changes the button's HTML ID from login-button to submit-btn tomorrow, all 50 of your tests break, and you have to edit 50 files to fix it.
+
+    - The Page Object Model Solution: For every screen on the website, you create one dedicated Java class (like LoginPage.java). That class is the only place in your entire project allowed to store the HTML locators (By.id("login-button")) and screen actions (login()). Your tests simply call loginPage.login(). If the website changes tomorrow, you update 1 line inside LoginPage.java, and all 50 tests are fixed instantly.
+
+    -
+
+3- pom.xml -> Dependency & Build
+   DriverManager.java -> Creates & isolates browser instances per thread
+   Hooks.java -> Runs setup/teardown before and after each scenario
+   LoginPage.java -> Locators and UI actions for the Login screen
+   WebTestRunner.java -> Entry point that triggers Cucumber via TestNG
+   LoginSteps.java -> Translates Gherkin sentences into Java calls
+   ConfigReader.java -> Reads key-value settings from config.properties
+   JsonDataReader.java -> Parses the external JSON test data file
+   config.properties-> Environment settings (browser, baseUrl, timeout)
+   Login.feature -> Plain-English Gherkin test scenarios
+   invalid_credentials.json -> test data sets for Scenario 1
+
+4- What happens when I click run?
+        1- TestNG starts WebTestRunner.java
+        2-WebTestRunner reads Login.feature file with the examples
+        3- On each thread, Cucumber triggers @Before in Hooks.java, which calls DriverManager.initDriver() to open an isolated browser window.
+        4- Cucumber executes the Given, When, and Then methods in LoginSteps.java
+        5- LoginSteps pulls test data via JsonDataReader.java and interacts with the browser via LoginPage.java
+        6- Once the assertion finishes, Cucumber triggers @After in Hooks.java, capturing a screenshot if the test failed and calling DriverManager.quitDriver() to close that thread's browser.
+
+4. pom.xml (The Project Blueprint)
+
+    Where it lives: Root of the project.
+
+    What it does: Configures Maven.
+
+    <properties>: Think of these as variables for version numbers (<selenium.version>4.25.0</selenium.version>).
+
+    <dependencies>: Every <dependency> block tells Maven to download a specific library (Selenium, Cucumber, TestNG, SLF4J logger silencer, and Jackson JSON reader).
+
+    <build><plugins>: Configures the maven-surefire-plugin, which tells Maven: "When someone runs mvn test in the terminal, look for any file ending in *Runner.java and execute it."
+        -
+
